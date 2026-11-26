@@ -1,23 +1,35 @@
-// Minimal Node server: serves public/ and the /api routes. `npm start` (reads GEMINI_API_KEY from the environment).
+// Minimal Node server: serves public/ and the /api routes.
+// Works both on Vercel (via default exported request handler) and locally via `npm start`.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createHandlers } from '../lib/handlers.js';
-import * as K from '../lib/keystore.js';
+import { createHandlers } from './lib/handlers.js';
+import * as K from './lib/keystore.js';
 
-const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUB = path.join(ROOT, 'public');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
 
-export function createServer(h) {
+// Explicit file references so Vercel's Node File Tracer (@vercel/nft) bundles static & data assets with server.js.
+const BUNDLED_ASSETS = [
+  path.join(ROOT, 'public', 'index.html'),
+  path.join(ROOT, 'public', 'admin.html'),
+  path.join(ROOT, 'public', 'app.js'),
+  path.join(ROOT, 'public', 'parsers.js'),
+  path.join(ROOT, 'public', 'style.css'),
+  path.join(ROOT, 'data', 'samples.json'),
+];
+void BUNDLED_ASSETS;
+
+export function createListener(h) {
   h ||= createHandlers();
-  return http.createServer(async (req, res) => {
-    const url = new URL(req.url, 'http://x');
-    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '';
+  return async (req, res) => {
+    const url = new URL(req.url || '/', 'http://x');
+    const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || '';
     const send = (r) => {
       if (r.text != null) { res.writeHead(r.status, { 'content-type': 'text/plain; charset=utf-8' }); return res.end(r.text); }
-      res.writeHead(r.status, { 'content-type': 'application/json' }); res.end(JSON.stringify(r.json));
+      res.writeHead(r.status, { 'content-type': 'application/json; charset=utf-8' }); return res.end(JSON.stringify(r.json));
     };
     try {
       if (url.pathname === '/api/config' && req.method === 'GET') return send(h.config());
@@ -43,15 +55,25 @@ export function createServer(h) {
       if (p === 'admin') p = 'admin.html';
       const file = path.join(PUB, p);
       if (!file.startsWith(PUB) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end('Not found'); }
+      const content = fs.readFileSync(file);
       res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin' });
-      fs.createReadStream(file).pipe(res);
+      return res.end(content);
     } catch (e) {
-      console.error(e); send({ status: 500, json: { error: 'server_error', message: 'Server error.' } });
+      console.error(e); return send({ status: 500, json: { error: 'server_error', message: 'Server error.' } });
     }
-  });
+  };
+}
+
+export function createServer(h) {
+  return http.createServer(createListener(h));
 }
 
 function readJSON(req, limit = 4 * 1024 * 1024) {
+  if (req.body !== undefined) {
+    if (typeof req.body === 'string') { try { return JSON.parse(req.body || '{}'); } catch { return null; } }
+    if (Buffer.isBuffer(req.body)) { try { return JSON.parse(req.body.toString('utf8') || '{}'); } catch { return null; } }
+    return (req.body && typeof req.body === 'object') ? req.body : {};
+  }
   return new Promise(resolve => {
     let size = 0; const chunks = [];
     req.on('data', c => { size += c.length; if (size > limit) { resolve(null); req.destroy(); } else chunks.push(c); });
@@ -59,7 +81,18 @@ function readJSON(req, limit = 4 * 1024 * 1024) {
   });
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+// Default export for Vercel's Node.js serverless runtime (no .listen() in serverless).
+export const maxDuration = 60;
+let vercelListener;
+export default async function handler(req, res) {
+  if (!vercelListener) {
+    K.init();
+    vercelListener = createListener();
+  }
+  return vercelListener(req, res);
+}
+
+if (!process.env.VERCEL && process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const st = K.init(); K.watchEnvFile();
   const port = Number(process.env.PORT || 3000);
   createServer().listen(port, () => {
