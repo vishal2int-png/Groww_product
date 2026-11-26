@@ -1,5 +1,5 @@
 // TEST ONLY: serves the real app with a fake model client (no Gemini calls). Never used by `npm start`.
-import { createServer } from '../server.js';
+import { createServer } from '../scripts/server.js';
 import { createHandlers } from '../lib/handlers.js';
 import * as K from '../lib/keystore.js';
 import { fakeClient } from './fake-client.js';

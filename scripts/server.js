@@ -3,10 +3,10 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createHandlers } from './lib/handlers.js';
-import * as K from './lib/keystore.js';
+import { createHandlers } from '../lib/handlers.js';
+import * as K from '../lib/keystore.js';
 
-const ROOT = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUB = path.join(ROOT, 'public');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
 

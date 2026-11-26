@@ -2,9 +2,8 @@
   "name": "lectureloop",
   "version": "2.0.0",
   "description": "Ask why a lecture step works, see the evidence, test yourself.",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node scripts/server.js",
     "test": "node --test test/*.test.js",
     "set-key": "node scripts/set-key.js"
   },
