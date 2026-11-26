@@ -1,0 +1,28 @@
+[
+  {
+    "id": "vd-lec02-longitudinal",
+    "title": "Longitudinal Dynamics",
+    "videoTitle": "Mod-01 Lec-02 Longitudinal Dynamics",
+    "course": "Vehicle Dynamics",
+    "lecture": "Lecture 2",
+    "lecturer": "Dr. R. Krishnakumar",
+    "institute": "IIT Madras",
+    "provider": "NPTEL",
+    "channel": "nptelhrd",
+    "videoUrl": "https://www.youtube.com/watch?v=T7el7XL1aK8",
+    "sourceUrl": "https://www.youtube.com/watch?v=T7el7XL1aK8",
+    "transcript": "transcripts/T7el7XL1aK8.srt",
+    "requireTranscript": false
+  },
+  {
+    "id": "vd-load-distribution",
+    "title": "Vehicle Load Distribution – Acceleration and Braking",
+    "course": "Vehicle Dynamics",
+    "provider": "NPTEL",
+    "videoUrl": null,
+    "sourceUrl": null,
+    "transcript": null,
+    "requireTranscript": true,
+    "note": "Coming soon: waiting for the real video link and its timestamped transcript."
+  }
+]

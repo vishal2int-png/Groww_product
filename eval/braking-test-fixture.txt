@@ -1,0 +1,3 @@
+[00:10] Assume b is the positive magnitude of deceleration and is constant from the instant braking begins.
+[00:35] With final speed zero, stopping distance is d = u²/(2b), where u is initial speed.
+[01:05] In the measured run, brake pressure builds gradually. The deceleration history during buildup has not been specified.

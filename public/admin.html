@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>LectureLoop · Gemini key</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>try{var t=localStorage.getItem("ll.theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+.wrap{max-width:640px;margin:0 auto;padding:40px max(4vw,16px) 64px}
+.wrap h1{font-size:30px;letter-spacing:-.02em;margin:0 0 6px}
+.kv{display:grid;grid-template-columns:140px minmax(0,1fr);gap:6px 14px;font-size:15px;margin:6px 0 0}
+.kv dt{color:var(--muted)}.kv dd{margin:0}
+.ok{color:#15803d;font-weight:600}.no{color:var(--err);font-weight:600}
+.msg{margin-top:14px;border-radius:10px;padding:12px 14px;font-size:15px}
+.msg.good{background:color-mix(in srgb,#15803d 12%,var(--card));color:light-dark(#14532d,#86efac)}
+.msg.bad{background:var(--errBg);color:var(--err)}
+ol{padding-left:20px;margin:8px 0}li{margin:4px 0}
+pre{background:var(--card2);border-radius:8px;padding:12px;font:13px/1.5 var(--mono);overflow-x:auto;margin:8px 0 0}
+</style>
+</head>
+<body>
+<header class="bar"><a class="brand" href="./" style="text-decoration:none;color:inherit"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8a4 4 0 1 0 0 8c2.5 0 3.5-2 5-4s2.5-4 5-4a4 4 0 1 1 0 8c-2.5 0-3.5-2-5-4S9.5 8 7 8z" fill="none" stroke="#fff" stroke-width="2.2"/></svg></span>LectureLoop</a></header>
+<main class="wrap">
+ <h1>Gemini key</h1>
+ <p class="sub">Owner only. The key stays on the server; this page never shows it, only its last 4 characters.</p>
+
+ <form class="card" id="authForm" style="margin-bottom:16px">
+  <label class="f" for="token" style="margin-top:0">Admin token</label>
+  <div class="askrow"><input class="in" id="token" type="password" autocomplete="current-password" placeholder="The ADMIN_TOKEN set on the server"><button class="btn primary">Unlock</button></div>
+  <p class="hint">Kept only in this tab’s memory.</p>
+  <div id="authMsg"></div>
+ </form>
+
+ <section class="card" id="panel" hidden>
+  <h2>Status</h2>
+  <dl class="kv" id="kv"></dl>
+  <div class="row"><button class="btn secondary small" id="testCur">Test current key</button></div>
+  <div id="curMsg"></div>
+
+  <h2 style="margin-top:28px">Update the key</h2>
+  <div id="updHere">
+   <label class="f" for="newKey">New GEMINI_API_KEY</label>
+   <input class="in mono" id="newKey" type="password" autocomplete="off" spellcheck="false" placeholder="AIza… or AQ.…">
+   <p class="hint">Saving first checks the key with a live Gemini call, then writes it to the server’s .env and switches over without a restart.</p>
+   <div class="row"><button class="btn secondary" id="testNew">Test only</button><button class="btn primary" id="save">Test and save</button></div>
+  </div>
+  <div id="updPlatform" hidden>
+   <p>This deployment’s environment variables are managed by the hosting platform, so the key can’t be written from here.</p>
+   <ol>
+    <li>Open the project in the Vercel dashboard → <b>Settings → Environment Variables</b>.</li>
+    <li>Edit <span class="mono">GEMINI_API_KEY</span> (Production, and Preview if used) and save the new value.</li>
+    <li>Go to <b>Deployments</b> → latest → <b>Redeploy</b>. The new key is live when the deploy finishes.</li>
+   </ol>
+   <p class="hint">Or with the Vercel CLI:</p>
+   <pre>vercel env rm GEMINI_API_KEY production
+vercel env add GEMINI_API_KEY production
+vercel --prod</pre>
+   <p class="hint">Then use “Test current key” above to confirm.</p>
+  </div>
+  <div id="updMsg"></div>
+ </section>
+</main>
+<script>
+{
+const $ = id => document.getElementById(id);
+let token = '';
+const call = async (path, body) => {
+  const r = await fetch(path, { method: body ? 'POST' : 'GET', headers: { authorization: 'Bearer ' + token, ...(body ? { 'content-type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  let j = {}; try { j = await r.json(); } catch (e) { }
+  return { ok: r.ok, status: r.status, j };
+};
+const msg = (el, good, text) => { $(el).innerHTML = ''; const d = document.createElement('div'); d.className = 'msg ' + (good ? 'good' : 'bad'); d.textContent = text; $(el).appendChild(d); };
+function show(s) {
+  const rows = [['Key', s.configured ? `<span class="ok">Set</span> · ends in <span class="mono">${s.last4.replace(/[^\w-]/g, '')}</span>` : '<span class="no">Not set</span> — questions return “not configured”'],
+    ['Source', s.source || '—'], ['Last updated', s.updatedAt ? new Date(s.updatedAt).toLocaleString() : '—'], ['Text model', s.model], ['Video model', s.videoModel], ['Host', s.platform]];
+  $('kv').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${k === 'Key' ? v : String(v).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';')}</dd>`).join('');
+  $('updHere').hidden = !s.canUpdateHere; $('updPlatform').hidden = s.canUpdateHere;
+}
+$('authForm').onsubmit = async e => {
+  e.preventDefault(); token = $('token').value.trim(); $('authMsg').innerHTML = '';
+  const r = await call('api/admin/status');
+  if (!r.ok) { $('panel').hidden = true; return msg('authMsg', false, r.j.message || 'Couldn’t reach the server.'); }
+  $('panel').hidden = false; show(r.j);
+};
+$('testCur').onclick = async () => { $('curMsg').innerHTML = '<p class="load"><span class="spin"></span>Calling Gemini…</p>'; const r = await call('api/admin/test', {}); r.ok ? msg('curMsg', true, `Works: ${r.j.model} answered “${r.j.reply}”.`) : msg('curMsg', false, r.j.message || 'Test failed.'); };
+$('testNew').onclick = async () => { const key = $('newKey').value.trim(); if (!key) return; $('updMsg').innerHTML = '<p class="load"><span class="spin"></span>Calling Gemini…</p>'; const r = await call('api/admin/test', { key }); r.ok ? msg('updMsg', true, 'This key works. Nothing saved yet.') : msg('updMsg', false, r.j.message || 'Test failed.'); };
+$('save').onclick = async () => {
+  const key = $('newKey').value.trim(); if (!key) return;
+  $('save').disabled = true; $('updMsg').innerHTML = '<p class="load"><span class="spin"></span>Testing and saving…</p>';
+  const r = await call('api/admin/key', { key }); $('save').disabled = false;
+  if (r.ok) { $('newKey').value = ''; show(r.j); msg('updMsg', true, `Saved. LectureLoop now uses the key ending in ${r.j.last4}.`); }
+  else msg('updMsg', false, r.j.message || 'Not saved.');
+};
+}
+</script>
+</body>
+</html>

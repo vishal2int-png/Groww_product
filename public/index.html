@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LectureLoop</title>
+<meta name="description" content="Stuck at a step in a recorded lecture? Ask why, see where it's explained, test yourself.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232e389e'/%3E%3Cpath d='M9 11a5 5 0 1 0 0 10c3 0 4.5-2.5 7-5s4-5 7-5a5 5 0 1 1 0 10c-3 0-4.5-2.5-7-5s-4-5-7-5z' fill='none' stroke='%23fff' stroke-width='2.4'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>try{var t=localStorage.getItem("ll.theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<header class="bar">
+ <button class="brand" id="brand"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8a4 4 0 1 0 0 8c2.5 0 3.5-2 5-4s2.5-4 5-4a4 4 0 1 1 0 8c-2.5 0-3.5-2-5-4S9.5 8 7 8z" fill="none" stroke="#fff" stroke-width="2.2"/></svg></span>LectureLoop</button>
+ <button class="theme" id="themeBtn" type="button" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2"/></svg>Night mode<i></i></button>
+</header>
+
+<main id="home" class="home">
+ <h1>Stuck at a step?</h1>
+ <p class="lead">Paste the lecture link at the moment you paused, ask why the professor did what they did, and get a short answer pinned to where it’s explained — then test yourself on that step.</p>
+ <div class="banner" id="cfgBanner" hidden></div>
+ <div class="grid2">
+  <form class="card" id="startForm" novalidate aria-labelledby="linkH">
+   <h2 id="linkH">Paste a YouTube lecture link</h2>
+   <p class="sub">A timestamped link (Share → Start at) fills in where you’re stuck.</p>
+   <label class="f" for="link" style="position:absolute;left:-9999px">YouTube lecture link</label>
+   <input class="in big" id="link" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://youtu.be/…?t=760">
+   <p class="hint err" id="linkErr" hidden></p>
+   <div class="vchip" id="vchip" hidden><img id="vthumb" alt="" onerror="this.hidden=true" onload="this.hidden=false"><div><b id="vtitle">YouTube video</b><span id="vinfo"></span></div></div>
+   <div class="row2">
+    <div>
+     <label class="f" for="stuck">I’m stuck at <em id="stuckOpt">(optional)</em></label>
+     <input class="in mono" id="stuck" placeholder="mm:ss" inputmode="numeric" autocomplete="off">
+     <p class="hint err" id="stuckErr" hidden>Use mm:ss, e.g. 12:40</p>
+    </div>
+    <div>
+     <label class="f" for="question">Your question</label>
+     <textarea class="in" id="question" rows="2" placeholder="Why did the professor drop that term here?"></textarea>
+    </div>
+   </div>
+   <div class="attached" id="homeAttached" hidden><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.5h5l3.5 3.5v9.5h-8.5z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><span id="homeAttTxt"></span><button type="button" class="lnk" id="homeAttRemove">Remove</button></div>
+   <div class="go">
+    <button type="button" class="lnk" id="openAttach">Upload or paste a transcript</button>
+    <span class="grow"></span>
+    <button class="btn primary" id="askBtn" disabled>Ask</button>
+   </div>
+  </form>
+  <section class="card" aria-labelledby="sH">
+   <h2 id="sH">Try a sample lecture</h2>
+   <p class="sub">Real NPTEL lectures, opened in one click.</p>
+   <div id="demos"><div class="load"><span class="spin"></span>Loading samples…</div></div>
+   <div class="keys">
+    <div><span class="chip tx" tabindex="-1"><span>Transcript ·</span><span class="t">12:40</span></span><span>time and passage from a real caption cue</span></div>
+    <div><span class="chip vd" tabindex="-1"><span>Video · around</span><span class="t">12:40</span></span><span>approximate moment found by the model; answer is a paraphrase</span></div>
+   </div>
+  </section>
+ </div>
+</main>
+
+<main id="studyView" hidden>
+ <div class="lhead">
+  <div class="lbar"><button class="back" id="backBtn" type="button"><svg width="10" height="16" viewBox="0 0 12 20" aria-hidden="true"><path d="M10 2 2 10l8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Back to lectures</button><span class="sep"></span><span id="srcTag" class="tag"></span><button class="btn secondary small change" id="changeBtn" type="button">⇄ Change lecture</button></div>
+  <h1 id="lTitle"></h1><div class="meta" id="lMeta"></div></div>
+ <div class="study">
+  <div class="main">
+   <div class="player" id="playerBox"><div id="player"></div></div>
+   <div class="ptools"><a class="lnk" id="ytLink" target="_blank" rel="noopener">Open on YouTube</a><span id="pStatus" class="hint" style="margin:0"></span></div>
+   <form class="askcard" id="askForm" novalidate>
+    <div class="askrow">
+     <label for="q2" style="position:absolute;left:-9999px">Your question</label>
+     <textarea class="in" id="q2" rows="1" placeholder="Why did the professor drop that term here?" enterkeyhint="send"></textarea>
+     <button class="btn primary" id="q2Send">Ask</button>
+    </div>
+    <div class="stuckrow">
+     <label for="stuck2">I’m stuck at</label>
+     <input class="in" id="stuck2" placeholder="mm:ss" inputmode="numeric" autocomplete="off">
+     <button type="button" class="btn secondary small" id="useNow" hidden>Use current time</button>
+     <span class="hint err" id="stuck2Err" hidden style="margin:0">Use mm:ss</span>
+    </div>
+   </form>
+   <div id="turns"></div>
+  </div>
+  <aside class="side">
+   <section class="panel evp" aria-label="Evidence">
+    <h2>Selected passage <small id="evSrc"></small></h2>
+    <div class="ev empty" id="ev">Select a citation to see where the answer comes from.</div>
+   </section>
+   <section class="panel txp" id="txPanel" hidden aria-label="Transcript">
+    <h2><span id="txTitle">Lecture transcript</span> <span id="syncPill" class="sync" hidden></span><small id="txCount"></small></h2>
+    <div class="txh"><input class="in search" id="find" type="search" placeholder="Search the transcript"></div>
+    <div class="list" id="list"></div>
+   </section>
+  </aside>
+ </div>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="false" aria-labelledby="shTitle" hidden>
+ <div class="grab"></div>
+ <div class="sh"><b id="shTitle">Selected passage</b><button class="lnk" id="shClose">Done</button></div>
+ <div class="body" id="shBody"></div>
+</div>
+
+<dialog id="attachDlg" aria-labelledby="attH">
+ <form class="dlg" method="dialog" id="attachForm" novalidate>
+  <h2 id="attH">Add a transcript</h2>
+  <p class="sub" style="margin:0">Answers will come from this transcript. The YouTube link is still used for playback.</p>
+  <div class="seg" role="tablist"><button type="button" role="tab" id="tUp" aria-selected="true">Upload file</button><button type="button" role="tab" id="tPaste" aria-selected="false">Paste text</button></div>
+  <div id="upPane">
+   <label class="drop" id="drop"><b>Drop an .srt or .pdf here</b><span>or tap to choose · PDFs need selectable text</span><input type="file" id="file" accept=".srt,.vtt,.pdf,.txt,application/pdf,text/plain"></label>
+   <p class="hint" id="fileName" hidden></p>
+  </div>
+  <div id="pastePane" hidden><textarea class="in" id="paste" rows="8" placeholder="Paste the transcript. Timestamps like 12:40 or [12:40] at line starts are kept; otherwise paragraphs are cited."></textarea></div>
+  <label class="f" for="attLabel">Label <em>(optional)</em></label><input class="in" id="attLabel" autocomplete="off" placeholder="e.g. Braking test fixture">
+  <div class="alert" id="attErr" role="alert" hidden></div>
+  <div class="go"><span class="grow hint" id="attStatus"></span><button type="button" class="btn secondary" id="attCancel">Cancel</button><button type="button" class="btn primary" id="attUse" disabled>Use transcript</button></div>
+ </form>
+</dialog>
+
+<script src="parsers.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
