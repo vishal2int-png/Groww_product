@@ -73,6 +73,9 @@ textarea.in{resize:vertical;line-height:1.5}
 .demo:disabled .play{background:var(--muted)}
 .keys{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);font-size:14px;color:var(--muted);display:grid;gap:8px}
 .keys div{display:flex;gap:10px;align-items:baseline}
+.showcase{margin-top:24px;padding:clamp(18px,2.5vw,26px)}
+.showcase-head{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.showcase-img{display:block;width:100%;height:auto;border-radius:8px;border:1px solid var(--line)}
 
 /* citation chips: two visibly different kinds */
 .chip{flex:none;display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:500;line-height:1.1;border-radius:999px;padding:5px 10px;margin:2px 2px;cursor:pointer;vertical-align:1px;white-space:nowrap;font-family:var(--sans)}

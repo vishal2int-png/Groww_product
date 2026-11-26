@@ -9,7 +9,7 @@ import * as K from './lib/keystore.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUB = path.join(ROOT, 'public');
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon' };
 
 // Explicit file references so Vercel's Node File Tracer (@vercel/nft) bundles static & data assets with server.js.
 const BUNDLED_ASSETS = [
@@ -18,6 +18,7 @@ const BUNDLED_ASSETS = [
   path.join(ROOT, 'public', 'app.js'),
   path.join(ROOT, 'public', 'parsers.js'),
   path.join(ROOT, 'public', 'style.css'),
+  path.join(ROOT, 'public', 'how-it-works.jpg'),
   path.join(ROOT, 'data', 'samples.json'),
 ];
 void BUNDLED_ASSETS;
