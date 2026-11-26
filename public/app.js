@@ -102,6 +102,8 @@ function renderMeta() {
   const b = $('metaAttach'); if (b) b.onclick = () => openAttach('study');
 }
 function goHome() {
+  if (typeof clearTourSpot === 'function') clearTourSpot();
+  if (typeof tourIdx === 'number' && tourIdx > 0) { tourIdx = -1; $('tourCard').hidden = true; }
   closeSheet(); $('home').hidden = false; $('studyView').hidden = true;
   if (location.hash) history.replaceState(null, '', location.pathname);
   destroyPlayer(); window.scrollTo(0, 0);
@@ -250,6 +252,10 @@ function renderTurns() {
     }
     return `<article class="turn" style="margin-bottom:16px"><div class="qhead"><span class="eyebrow muted">Student question${t.stuckAt != null ? ` · stuck at <span class="mono" style="color:var(--acc)">${fmtTime(t.stuckAt)}</span>` : ''}</span><span class="tag${vid ? ' vd' : ''}">${vid ? 'Evidence: video' : 'Evidence: transcript'}</span></div><p class="q">${esc(t.q)}</p>${body}</article>`;
   }).join('');
+  if (typeof tourIdx === 'number') {
+    if (tourIdx === 1) { const el = document.querySelector('#turns .turn'); if (el) el.classList.add('tour-spot'); }
+    if (tourIdx === 3) { const el = document.querySelector('#turns .recall'); if (el) el.classList.add('tour-spot'); }
+  }
 }
 function testHtml(t, i) {
   const x = t.test;
@@ -468,4 +474,152 @@ async function readPdf(file) {
     return pages;
   } catch (e) { e.pdf = true; throw e; }
 }
+
+// ---------- Interactive guided demo tour ----------
+const TOUR_STEPS = [
+  {
+    title: '1. Bring the exact moment you got stuck',
+    body: 'Paste any YouTube lecture link (with a timestamp or type mm:ss) and ask why a step works. You can also upload an .srt or .pdf transcript.',
+    nextLabel: 'Next: See grounded answer →',
+  },
+  {
+    title: '2. Get a short, lecture-grounded explanation',
+    body: 'LectureLoop explains just that step using the lecturer’s exact notation — never inventing extra formulas — and pins claims to clickable lecture timestamps.',
+    nextLabel: 'Next: Verify the source →',
+  },
+  {
+    title: '3. Verify the exact source in one click',
+    body: 'Clicking any citation chip opens the supporting passage or jumps the lecture player directly to that moment so you can verify it yourself.',
+    nextLabel: 'Next: Practise the step →',
+  },
+  {
+    title: '4. Practise the idea with active recall',
+    body: 'Click “Test me on this step” to try one targeted practice question on the same concept before revealing the solution. Try typing or clicking “Reveal answer”!',
+    nextLabel: 'Finish demo ✓',
+  },
+];
+
+let tourIdx = -1;
+const DEMO_MOMENT = { sec: 760, label: '12:40', what: 'Constant deceleration kinematic relation v² = u² − 2bd with final velocity v = 0' };
+
+function clearTourSpot() {
+  document.querySelectorAll('.tour-spot').forEach(el => el.classList.remove('tour-spot'));
+}
+function spotEl(el) {
+  clearTourSpot();
+  if (!el) return;
+  el.classList.add('tour-spot');
+  el.scrollIntoView({ block: 'center', behavior: reduce() ? 'auto' : 'smooth' });
+}
+function ensureDemoStudy(withRecall) {
+  const s = CFG.samples.find(x => x.id === 'vd-lec02-longitudinal') || {
+    id: 'vd-lec02-longitudinal',
+    title: 'Longitudinal Dynamics',
+    videoTitle: 'Mod-01 Lec-02 Longitudinal Dynamics',
+    course: 'Vehicle Dynamics',
+    lecture: 'Lecture 2',
+    lecturer: 'Dr. R. Krishnakumar',
+    institute: 'IIT Madras',
+    provider: 'NPTEL',
+    channel: 'nptelhrd',
+    videoId: 'T7el7XL1aK8',
+  };
+  if ($('studyView').hidden || !L || !L._demo) {
+    openStudy({ videoId: s.videoId || 'T7el7XL1aK8', start: 760, title: s.title, sample: s, tx: null, _demo: true });
+  }
+  turns = [{
+    q: 'Why did the professor drop the v² term to get d = u² / 2b here?',
+    stuckAt: 760,
+    mode: 'video',
+    loading: false,
+    error: null,
+    answer: {
+      kind: 'video',
+      model: 'demo walkthrough',
+      supported: true,
+      step: 'Stopping distance d = u² / 2b',
+      answer: 'For braking to a complete stop under constant deceleration `b`, final velocity `v` becomes zero, so `v² = u² − 2bd` drops the `v²` term and rearranges directly to `d = u² / 2b`.',
+      moments: [DEMO_MOMENT],
+    },
+    test: withRecall ? {
+      kind: 'video',
+      question: 'A vehicle decelerates uniformly at 4 m/s² from 20 m/s to a complete stop. Using this same step, what is its stopping distance d?',
+      answer: 'Using `d = u² / 2b`, `d = 20² / (2 × 4) = 400 / 8 = 50 m`.',
+      why: 'With constant deceleration b = 4 m/s² and final velocity v = 0, setting v² = 0 in v² = u² − 2bd directly gives d = u² / 2b.',
+      moment: { sec: 760, label: '12:40' },
+      attempt: '',
+      revealed: false,
+    } : null,
+  }];
+  renderTurns();
+  showEvidence({ type: 'vd', ...DEMO_MOMENT }, false);
+}
+
+function renderTourStep() {
+  if (tourIdx < 0 || tourIdx >= TOUR_STEPS.length) return stopTour(true);
+  const st = TOUR_STEPS[tourIdx];
+  $('tourCard').hidden = false;
+  $('tcStep').textContent = `Step ${tourIdx + 1} of ${TOUR_STEPS.length}`;
+  $('tcDots').innerHTML = TOUR_STEPS.map((_, i) => `<i class="${i === tourIdx ? 'on' : ''}"></i>`).join('');
+  $('tcTitle').textContent = st.title;
+  $('tcBody').textContent = st.body;
+  $('tcPrev').hidden = tourIdx === 0;
+  $('tcNext').textContent = st.nextLabel;
+
+  if (tourIdx === 0) {
+    if (!$('studyView').hidden) goHome();
+    $('link').value = 'https://www.youtube.com/watch?v=T7el7XL1aK8&t=760s';
+    autoStuck = true;
+    onLink();
+    $('question').value = 'Why did the professor drop the v² term to get d = u² / 2b here?';
+    validateHome();
+    setTimeout(() => spotEl($('startForm')), 60);
+  } else if (tourIdx === 1) {
+    ensureDemoStudy(false);
+    setTimeout(() => spotEl(document.querySelector('#turns .turn')), 80);
+  } else if (tourIdx === 2) {
+    ensureDemoStudy(false);
+    setTimeout(() => spotEl(isPhone() ? document.querySelector('#turns .chip.vd') : document.querySelector('.evp')), 80);
+  } else if (tourIdx === 3) {
+    ensureDemoStudy(true);
+    setTimeout(() => spotEl(document.querySelector('#turns .recall')), 80);
+  }
+}
+
+function startTour() {
+  if ($('demoPromptDlg').open) $('demoPromptDlg').close();
+  tourIdx = 0;
+  renderTourStep();
+}
+function stopTour(resetHome) {
+  tourIdx = -1;
+  clearTourSpot();
+  $('tourCard').hidden = true;
+  if (resetHome) {
+    goHome();
+    $('link').value = '';
+    $('stuck').value = '';
+    $('question').value = '';
+    autoStuck = true;
+    onLink();
+  }
+}
+
+$('tourBtn').onclick = startTour;
+$('tcPrev').onclick = () => { if (tourIdx > 0) { tourIdx--; renderTourStep(); } };
+$('tcNext').onclick = () => { if (tourIdx < TOUR_STEPS.length - 1) { tourIdx++; renderTourStep(); } else stopTour(true); };
+$('tcSkip').onclick = () => stopTour(true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && tourIdx >= 0) stopTour(true); });
+
+function markDemoPrompted() { try { localStorage.setItem('ll.demoPrompted', '1'); } catch (e) { } }
+$('dpYes').onclick = () => { markDemoPrompted(); startTour(); };
+$('dpNo').onclick = () => { markDemoPrompted(); $('demoPromptDlg').close(); };
+$('demoPromptDlg').addEventListener('cancel', markDemoPrompted);
+
+// Ask first-time visitors if they want a guided demo; if they choose "No", leave them undisturbed.
+try {
+  if (!localStorage.getItem('ll.demoPrompted') && location.hash !== '#study') {
+    setTimeout(() => { if (tourIdx < 0 && !$('demoPromptDlg').open) $('demoPromptDlg').showModal(); }, 350);
+  }
+} catch (e) { }
 }

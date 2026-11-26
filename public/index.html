@@ -14,13 +14,18 @@
 <body>
 <header class="bar">
  <button class="brand" id="brand"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8a4 4 0 1 0 0 8c2.5 0 3.5-2 5-4s2.5-4 5-4a4 4 0 1 1 0 8c-2.5 0-3.5-2-5-4S9.5 8 7 8z" fill="none" stroke="#fff" stroke-width="2.2"/></svg></span>LectureLoop</button>
+ <span class="bar-spacer"></span>
+ <button class="tour-btn" id="tourBtn" type="button"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/></svg>Demo tour</button>
  <button class="theme" id="themeBtn" type="button" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2"/></svg>Night mode<i></i></button>
 </header>
 
 <main id="home" class="home">
+ <div class="banner" id="cfgBanner" hidden></div>
+ <section class="card showcase" aria-label="How LectureLoop works">
+  <img class="showcase-img" src="how-it-works.jpg" alt="A personal way to tackle the doubt you left class with: bring your doubt, choose the kind of help, get a personalised grounded response with sources, and practise the idea." loading="eager">
+ </section>
  <h1>Stuck at a step?</h1>
  <p class="lead">Paste the lecture link at the moment you paused, ask why the professor did what they did, and get a short answer pinned to where it’s explained — then test yourself on that step.</p>
- <div class="banner" id="cfgBanner" hidden></div>
  <div class="grid2">
   <form class="card" id="startForm" novalidate aria-labelledby="linkH">
    <h2 id="linkH">Paste a YouTube lecture link</h2>
@@ -57,13 +62,6 @@
    </div>
   </section>
  </div>
- <section class="card showcase" aria-labelledby="howH">
-  <div class="showcase-head">
-   <span class="eyebrow">How LectureLoop Works</span>
-   <h2 id="howH">From a lecture doubt to independent practice</h2>
-  </div>
-  <img class="showcase-img" src="how-it-works.jpg" alt="A personal way to tackle the doubt you left class with: bring your doubt, choose the kind of help, get a personalised grounded response with sources, and practise the idea." loading="eager">
- </section>
 </main>
 
 <main id="studyView" hidden>
@@ -122,9 +120,36 @@
   <div id="pastePane" hidden><textarea class="in" id="paste" rows="8" placeholder="Paste the transcript. Timestamps like 12:40 or [12:40] at line starts are kept; otherwise paragraphs are cited."></textarea></div>
   <label class="f" for="attLabel">Label <em>(optional)</em></label><input class="in" id="attLabel" autocomplete="off" placeholder="e.g. Braking test fixture">
   <div class="alert" id="attErr" role="alert" hidden></div>
-  <div class="go"><span class="grow hint" id="attStatus"></span><button type="button" class="btn secondary" id="attCancel">Cancel</button><button type="button" class="btn primary" id="attUse" disabled>Use transcript</button></div>
+ <div class="go"><span class="grow hint" id="attStatus"></span><button type="button" class="btn secondary" id="attCancel">Cancel</button><button type="button" class="btn primary" id="attUse" disabled>Use transcript</button></div>
  </form>
 </dialog>
+
+<dialog id="demoPromptDlg" aria-labelledby="dpTitle">
+ <div class="dlg dp-dlg">
+  <span class="eyebrow">Quick Interactive Tour · 4 Steps</span>
+  <h2 id="dpTitle">Would you like a quick demo of LectureLoop?</h2>
+  <p class="sub" style="margin:6px 0 0">Take a 30-second interactive walkthrough showing how to bring a lecture doubt, inspect grounded citations, and practise the exact step — or skip straight to the app.</p>
+  <div class="dp-actions">
+   <button type="button" class="btn secondary" id="dpNo">No thanks, I’ll explore</button>
+   <button type="button" class="btn primary" id="dpYes">Yes, show me the demo →</button>
+  </div>
+ </div>
+</dialog>
+
+<aside class="tour-card" id="tourCard" role="dialog" aria-live="polite" aria-labelledby="tcTitle" hidden>
+ <div class="tc-top">
+  <span class="eyebrow" id="tcStep">Step 1 of 4</span>
+  <div class="tc-dots" id="tcDots" aria-hidden="true"></div>
+  <button type="button" class="lnk tc-skip" id="tcSkip">Exit demo</button>
+ </div>
+ <h3 id="tcTitle"></h3>
+ <p id="tcBody"></p>
+ <div class="tc-foot">
+  <button type="button" class="btn secondary small" id="tcPrev">← Back</button>
+  <span class="grow"></span>
+  <button type="button" class="btn primary small" id="tcNext">Next →</button>
+ </div>
+</aside>
 
 <script src="parsers.js"></script>
 <script src="app.js"></script>
